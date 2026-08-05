@@ -7,5 +7,5 @@ function! bookmaker_start#ui#layout() abort
 				\ '',
 				\ '		Press q to exit',
 				\ ''
-				\ ])
+				\ ]
 endfunction

@@ -5,7 +5,13 @@ function! bookmaker_start#open() abort
 	let l:previous_buffer = bufnr('%')
 
 	" Create and enter a distinct dashboard buffer.
-	let l:dashboard_buffer = bufadd('[Bookmaker]')
+	let l:dashboard_buffer = bufadd('')
+
+	call setbufvar(l:dashboard_buffer, '&buftype', 'nofile')
+	call setbufvar(l:dashboard_buffer, '&bufhidden', 'wipe')
+	call setbufvar(l:dashboard_buffer, '&swapfile', 0)
+	call setbufvar(l:dashboard_buffer, '&buflisted', 0)
+
 	call bufload(l:dashboard_buffer)
 	execute 'hide buffer ' . l:dashboard_buffer
 
@@ -13,12 +19,8 @@ function! bookmaker_start#open() abort
 	let b:bookmaker_start_previous_buffer = l:previous_buffer
 
 	" Turn in into a plugin-controller scratch buffer.
-	setlocal buftype=nofile
-	setlocal bufhidden=wipe
 	setlocal noswapfile
 	setlocal nobuflisted
-
-	" Dasboard apparence.
 	setlocal nonumber
 	setlocal norelativenumber
 	setlocal nowrap
@@ -27,7 +29,7 @@ function! bookmaker_start#open() abort
 	" Give the buffer a recognizable name.
 	execute 'file [Bookmaker]'
 
-	" Write the first Dasboard.
+	" Write the the layout Dasboard.
 	call setline(1, bookmaker_start#ui#layout())
 
 	" Protect the dashboard from accidental editing.
