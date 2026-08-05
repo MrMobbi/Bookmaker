@@ -28,15 +28,7 @@ function! bookmaker_start#open() abort
 	execute 'file [Bookmaker]'
 
 	" Write the first Dasboard.
-	call setline(1, [
-				\ '',
-				\ '		Bookmaker',
-				\ '',
-				\ '		This is a test text',
-				\ '',
-				\ '		Press q to exit',
-				\ ''
-				\ ])
+	call setline(1, bookmaker_start#ui#layout())
 
 	" Protect the dashboard from accidental editing.
 	setlocal nomodifiable
