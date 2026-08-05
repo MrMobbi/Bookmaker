@@ -1,0 +1,29 @@
+                         BOOKMAKER
+
+    [f] Find file with FZF in the current foldero
+    [/] Search text with ripgrep in the current folder
+
+  Quick bookmarks
+
+    [v] Vim configuration          ~/.vimrc
+    [z] Zsh configuration          ~/.zshrc
+    [g] Git configuration          ~/.gitconfig
+    [c] Curl configuration         ~/.curlrc
+
+
+  Bookmark folders
+
+    [C] Configuration              ~/.config/
+    [P] Projects                   ~/projects/
+    [D] Documents                  ~/Documents/
+
+
+  Current directory
+
+    ~/projects/bookmaker.vim
+
+	[0] file in the current directory
+	[..] file in the current directory
+	[9] file in the current directory
+
+        <CR> open    ? help    q close
