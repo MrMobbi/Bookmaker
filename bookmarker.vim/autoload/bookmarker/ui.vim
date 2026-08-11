@@ -1,4 +1,4 @@
-function! bookmarker_start#ui#layout(start_directory) abort
+function! bookmarker#ui#layout(start_directory) abort
     " Display ~/projects instead of /home/user/projects.
     let l:directory = fnamemodify(
                 \ a:start_directory,

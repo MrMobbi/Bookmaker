@@ -1,5 +1,5 @@
 
-function! bookmarker_start#open() abort
+function! bookmarker#open() abort
 
 	" Remeber the current file buffer.
 	let l:previous_buffer = bufnr('%')
@@ -19,12 +19,12 @@ function! bookmarker_start#open() abort
 	setfiletype bookmarker
 
 	" Save the previous buffer number in the dashboard.
-	let b:bookmarker_start_previous_buffer = l:previous_buffer
+	let b:bookmarker_previous_buffer = l:previous_buffer
 
 	" Rember the starting directory.
-	let b:bookmarker_path_start_directory = get(
+	let b:bookmarker_path_directory = get(
 		\ g:,
-		\ 'bookmarker_path_start_directory',
+		\ 'bookmarker_path_directory',
 		\ getcwd()
 		\ )
 
@@ -45,27 +45,27 @@ function! bookmarker_start#open() abort
 	execute 'file [Bookmarker]'
 
 	" Render the Home page
-	call setline(1, bookmarker_start#ui#layout(
-		\ b:bookmarker_path_start_directory))
+	call setline(1, bookmarker#ui#layout(
+		\ b:bookmarker_path_directory))
 
 	" Protect the dashboard from accidental editing.
 	setlocal nomodifiable
 	setlocal nomodified
 
 	" Move the cursor to the first selectable item.
-	call bookmarker_start#cursor#setup()
+	call bookmarker#cursor#setup()
 
 	augroup bookmarker_cursor
 		autocmd!
-		autocmd CursorMoved <buffer> call bookmarker_start#cursor#lock()
+		autocmd CursorMoved <buffer> call bookmarker#cursor#lock()
 	augroup END
 
 	"this mapping only exists in the dashboard buffer
-	nnoremap <silent><buffer> q :call bookmarker_start#close()<CR>
+	nnoremap <silent><buffer> q :call bookmarker#close()<CR>
 
 endfunction
 
-function! bookmarker_start#close() abort
+function! bookmarker#close() abort
     " Find all listed buffers.
     let l:listed_buffers = filter(
                 \ range(1, bufnr('$')),
