@@ -57,8 +57,8 @@ function! bookmarker#bookmarks#open(key) abort
         return
     endif
 
-    for l:bookmark.key in b:bookmarker_quick_bookmarks
-        if l:bookmark.key ==# a:key
+    for l:bookmark in b:bookmarker_quick_bookmarks
+        if l:bookmark.key !==# a:key
             continue
         endif
 
@@ -73,7 +73,7 @@ function! bookmarker#bookmarks#open(key) abort
             return
         endif
 
-        execute 'edit ' . l:path
+        execute 'edit ' . fnameescape(l:path)
         return
     endfor
 endfunction

@@ -47,6 +47,8 @@ function! bookmarker#open() abort
 	" Get the bookmarks
 	let l:bookmarks = bookmarker#bookmarks#get()
 
+	let l:bookmarker_quick_bookmarks = l:bookmarks
+
 	" Render the Home page
 	call setline(1, bookmarker#ui#layout(
 		\ b:bookmarker_path_directory,
