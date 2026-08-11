@@ -44,9 +44,13 @@ function! bookmarker#open() abort
 	" Give the buffer a recognizable name.
 	execute 'file [Bookmarker]'
 
+
+	let l:bookmarks = bookmarker#bookmarks#get()
+
 	" Render the Home page
 	call setline(1, bookmarker#ui#layout(
-		\ b:bookmarker_path_directory))
+		\ b:bookmarker_path_directory,
+		\ l:bookmarks))
 
 	" Protect the dashboard from accidental editing.
 	setlocal nomodifiable

@@ -1,11 +1,11 @@
-function! bookmarker#ui#layout(start_directory) abort
+function! bookmarker#ui#layout(start_directory, bookmarks) abort
     " Display ~/projects instead of /home/user/projects.
     let l:directory = fnamemodify(
                 \ a:start_directory,
                 \ ':~'
                 \ )
 
-    return [
+    let l:lines = [
                 \ '',
                 \ '                         BOOKMARKER',
                 \ '',
@@ -15,11 +15,37 @@ function! bookmarker#ui#layout(start_directory) abort
                 \ '',
                 \ '		Quick bookmarks',
                 \ '',
-                \ '  [v] Vim configuration          ~/.vimrc',
-                \ '  [z] Zsh configuration          ~/.zshrc',
-                \ '  [g] Git configuration          ~/.gitconfig',
-                \ '  [c] Curl configuration         ~/.curlrc',
-                \ '',
+                \ ]
+
+    for l:bookmark in a:bookmarks
+        let l:icon = bookmarker#bookmarks#icon(
+                    \ l:bookmark.path
+                    \ )
+
+        let l:path = fnamemodify(
+                    \ expand(l:bookmark.path),
+                    \ ':~'
+                    \ )
+
+        if empty(l:icon)
+            let l:line = printf(
+                        \ '  [%s] %s',
+                        \ l:bookmark.key,
+                        \ l:path
+                        \ )
+        else
+            let l:line = printf(
+                        \ '  [%s] %s %s',
+                        \ l:bookmark.key,
+                        \ l:icon,
+                        \ l:path
+                        \ )
+        endif
+
+        call add(l:lines, l:line)
+    endfor
+
+    call extend(l:lines, [
                 \ '',
                 \ '		Bookmark folders',
                 \ '',
@@ -39,5 +65,6 @@ function! bookmarker#ui#layout(start_directory) abort
                 \ '',
                 \ '        <CR> open    ? help    q close',
                 \ '',
-                \ ]
+                \ ])
+    return l:lines
 endfunction
