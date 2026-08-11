@@ -4,8 +4,8 @@ if exists("b:current_syntax")
 endif
 
 " Title
-syntax match BookmakerTitle
-            \ /^\s*BOOKMAKER\s*$/
+syntax match BookmarkerTitle
+            \ /^\s*BOOKMARKER\s*$/
 
 
 " Section titles
@@ -20,7 +20,7 @@ syntax match BookmarkerKey
 
 " Paths beginning with ~/
 syntax match BookmarkerPath
-            \ /~\/\S*/
+            \ /\~\/\S*/
 
 
 " PWD line

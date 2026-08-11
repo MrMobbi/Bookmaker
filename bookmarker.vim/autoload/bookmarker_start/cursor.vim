@@ -1,21 +1,21 @@
 function! bookmarker_start#cursor#setup() abort
-    let b:bookmarker_selectable_line = []
+    let b:bookmarker_selectable_lines = []
 
     for l:line_number in range(1, line('$'))
         let l:text = getline(l:line_number)
 
         if l:text =~# '^\s*\[[^]]\+\]'
             call add(
-                    \ b:bookmarker_selectable_line,
+                    \ b:bookmarker_selectable_lines,
                     \ l:line_number
                     \ )
         endif
     endfor
 
-    if empty(b:bookmarker_selectable_line)
+    if empty(b:bookmarker_selectable_lines)
         return
     endif
-    let b:bookmarker_last_line = b:bookmarker_selectable_line[0]
+    let b:bookmarker_last_line = b:bookmarker_selectable_lines[0]
 
     call bookmarker_start#cursor#move(
                 \ b:bookmarker_last_line)
@@ -30,7 +30,7 @@ function! bookmarker_start#cursor#move(line_number) abort
         return
     endif
 
-    call cursor(a:line_number, l:column + 2)
+    call cursor(a:line_number, l:column + 4)
 endfunction
 
 function! bookmarker_start#cursor#lock() abort
@@ -55,7 +55,7 @@ function! bookmarker_start#cursor#lock() abort
 
         let b:bookmarker_last_line = l:current_line
 
-        call bookmarker#cursor#move(
+        call bookmarker_start#cursor#move(
                     \ l:current_line
                     \ )
         return
@@ -69,7 +69,7 @@ function! bookmarker_start#cursor#lock() abort
                 let b:bookmarker_last_line =
                             \ l:line_number
 
-                call bookmarker#cursor#move(
+                call bookmarker_start#cursor#move(
                             \ l:line_number
                             \ )
                 return
@@ -82,7 +82,7 @@ function! bookmarker_start#cursor#lock() abort
 
         let b:bookmarker_last_line = l:last
 
-        call bookmarker#cursor#move(l:last)
+        call bookmarker_start#cursor#move(l:last)
 
         return
     endif
@@ -97,7 +97,7 @@ function! bookmarker_start#cursor#lock() abort
             let b:bookmarker_last_line =
                         \ l:line_number
 
-            call bookmarker#cursor#move(
+            call bookmarker_start#cursor#move(
                         \ l:line_number
                         \ )
 

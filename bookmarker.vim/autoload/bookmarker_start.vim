@@ -23,7 +23,7 @@ function! bookmarker_start#open() abort
 
 	" Rember the starting directory.
 	let b:bookmarker_path_start_directory = get(
-		\ b:,
+		\ g:,
 		\ 'bookmarker_path_start_directory',
 		\ getcwd()
 		\ )
@@ -51,6 +51,14 @@ function! bookmarker_start#open() abort
 	" Protect the dashboard from accidental editing.
 	setlocal nomodifiable
 	setlocal nomodified
+
+	" Move the cursor to the first selectable item.
+	call bookmarker_start#cursor#setup()
+
+	augroup bookmarker_cursor
+		autocmd!
+		autocmd CursorMoved <buffer> call bookmarker_start#cursor#lock()
+	augroup END
 
 	"this mapping only exists in the dashboard buffer
 	nnoremap <silent><buffer> q :call bookmarker_start#close()<CR>
