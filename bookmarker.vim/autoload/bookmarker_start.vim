@@ -15,8 +15,23 @@ function! bookmarker_start#open() abort
 	call bufload(l:dashboard_buffer)
 	execute 'hide buffer ' . l:dashboard_buffer
 
+	" Set the file type for syntax highlighting
+	setfiletype bookmarker
+
 	" Save the previous buffer number in the dashboard.
 	let b:bookmarker_start_previous_buffer = l:previous_buffer
+
+	" Rember the starting directory.
+	let b:bookmarker_path_start_directory = get(
+		\ g:,
+		\ 'bookmarker_path_start_directory',
+		\ getcwd()
+		\ )
+
+	" Changine status line
+	let w:bookmarker_previous_statusline = &l:statusline
+
+	setlocal statusline=\ Bookmarker
 
 	" Turn in into a plugin-controller scratch buffer.
 	setlocal noswapfile
@@ -29,12 +44,21 @@ function! bookmarker_start#open() abort
 	" Give the buffer a recognizable name.
 	execute 'file [Bookmarker]'
 
-	" Write the the layout Dasboard.
-	call setline(1, bookmarker_start#ui#layout())
+	" Render the Home page
+	call setline(1, bookmarker_start#ui#layout(
+		\ b:bookmarker_path_start_directory))
 
 	" Protect the dashboard from accidental editing.
 	setlocal nomodifiable
 	setlocal nomodified
+
+	" Move the cursor to the first selectable item.
+	call bookmarker_start#cursor#setup()
+
+	augroup bookmarker_cursor
+		autocmd!
+		autocmd CursorMoved <buffer> call bookmarker_start#cursor#lock()
+	augroup END
 
 	"this mapping only exists in the dashboard buffer
 	nnoremap <silent><buffer> q :call bookmarker_start#close()<CR>
@@ -42,21 +66,33 @@ function! bookmarker_start#open() abort
 endfunction
 
 function! bookmarker_start#close() abort
-	let l:dashboard_buffer = bufnr('%')
-	let l:previous_buffer = get(
-		\ b:,
-		\ 'bookmarker_start_previous_buffer',
-		\ -1
-		\ )
+    " Find all listed buffers.
+    let l:listed_buffers = filter(
+                \ range(1, bufnr('$')),
+                \ 'buflisted(v:val)'
+                \ )
 
-	if l:previous_buffer > 0
-				\ && l:previous_buffer != l:dashboard_buffer
-				\ && bufexists(l:previous_buffer)
+    " There are real/listed buffers available.
+    if !empty(l:listed_buffers)
 
-		" Go back to the previous buffer
-		execute 'buffer ' . l:previous_buffer
-	else
-		" No valid previous buffer, delete the dashboard buffer
-		execute 'bdelete! ' . l:dashboard_buffer
-	endif
+        " Prefer Vim's alternate buffer.
+        let l:alternate_buffer = bufnr('#')
+
+        if l:alternate_buffer > 0
+                    \ && bufloaded(l:alternate_buffer)
+                    \ && buflisted(l:alternate_buffer)
+
+            execute 'buffer ' . l:alternate_buffer
+
+        else
+            bnext
+        endif
+
+        if exists(':AirlineRefresh')
+            silent! AirlineRefresh
+        endif
+
+        return
+    endif
+    quit
 endfunction
