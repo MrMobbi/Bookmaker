@@ -44,7 +44,7 @@ function! bookmarker#open() abort
 	" Give the buffer a recognizable name.
 	execute 'file [Bookmarker]'
 
-
+	" Get the bookmarks
 	let l:bookmarks = bookmarker#bookmarks#get()
 
 	" Render the Home page
@@ -58,6 +58,9 @@ function! bookmarker#open() abort
 
 	" Move the cursor to the first selectable item.
 	call bookmarker#cursor#setup()
+
+	" Set up the mapping for the bookmarks
+	call bookmarker#bookmarks#mappings()
 
 	augroup bookmarker_cursor
 		autocmd!
