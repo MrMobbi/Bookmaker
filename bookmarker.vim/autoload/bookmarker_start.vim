@@ -80,8 +80,18 @@ function! bookmarker_start#close() abort
 		\ )
 
 	if l:previous_buffer > 0
-				\ && l:previous_buffer != l:dashboard_buffer
 				\ && bufexists(l:previous_buffer)
+
+		if empty(buffname(l:previous_buffer))
+					\ && getbufvar(l:previous_buffer, '&buftype') ==# ''
+					\ && !getbufvar(l:previous_buffer, '&moddied')
+					\ && getbufline(l:previous_buffer, 1, '$') ==# ['']
+			execute 'bdelete! ' . l:dashboard_buffer
+			return
+		endif
+
+		" Go back to the previous buffer
+		execute 'buffer ' . l:previous_buffer
 
 		" Restore the previous status line
 		let &l:statusline = l:previous_statusline
@@ -90,9 +100,6 @@ function! bookmarker_start#close() abort
 		if exists(':AirlineRefresh')
 			silent! AirlineRefresh
 		endif
-
-		" Go back to the previous buffer
-		execute 'buffer ' . l:previous_buffer
 	else
 		" No valid previous buffer, delete the dashboard buffer
 		execute 'bdelete! ' . l:dashboard_buffer
