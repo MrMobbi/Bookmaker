@@ -46,7 +46,7 @@ function! bookmarker#ui#layout(start_directory, bookmarks) abort
     endfor
 
     call extend(l:lines, [
-                \ ''
+                \ '',
                 \ '		Bookmark folders',
                 \ '',
                 \ '  [C] Configuration              ~/.config/',
