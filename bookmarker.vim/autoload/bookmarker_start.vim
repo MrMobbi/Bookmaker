@@ -66,42 +66,33 @@ function! bookmarker_start#open() abort
 endfunction
 
 function! bookmarker_start#close() abort
-	let l:dashboard_buffer = bufnr('%')
-	let l:previous_buffer = get(
-		\ b:,
-		\ 'bookmarker_start_previous_buffer',
-		\ -1
-		\ )
+    " Find all listed buffers.
+    let l:listed_buffers = filter(
+                \ range(1, bufnr('$')),
+                \ 'buflisted(v:val)'
+                \ )
 
-	let l:previous_statusline = get(
-		\ w:,
-		\ 'bookmarker_previous_statusline',
-		\ ''
-		\ )
+    " There are real/listed buffers available.
+    if !empty(l:listed_buffers)
 
-	if l:previous_buffer > 0
-				\ && bufexists(l:previous_buffer)
+        " Prefer Vim's alternate buffer.
+        let l:alternate_buffer = bufnr('#')
 
-		if empty(buffname(l:previous_buffer))
-					\ && getbufvar(l:previous_buffer, '&buftype') ==# ''
-					\ && !getbufvar(l:previous_buffer, '&moddied')
-					\ && getbufline(l:previous_buffer, 1, '$') ==# ['']
-			execute 'bdelete! ' . l:dashboard_buffer
-			return
-		endif
+        if l:alternate_buffer > 0
+                    \ && bufloaded(l:alternate_buffer)
+                    \ && buflisted(l:alternate_buffer)
 
-		" Go back to the previous buffer
-		execute 'buffer ' . l:previous_buffer
+            execute 'buffer ' . l:alternate_buffer
 
-		" Restore the previous status line
-		let &l:statusline = l:previous_statusline
+        else
+            bnext
+        endif
 
-		" Let airline redraw the status line
-		if exists(':AirlineRefresh')
-			silent! AirlineRefresh
-		endif
-	else
-		" No valid previous buffer, delete the dashboard buffer
-		execute 'bdelete! ' . l:dashboard_buffer
-	endif
+        if exists(':AirlineRefresh')
+            silent! AirlineRefresh
+        endif
+
+        return
+    endif
+    quit
 endfunction
