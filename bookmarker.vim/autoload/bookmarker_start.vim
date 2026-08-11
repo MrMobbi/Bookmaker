@@ -15,8 +15,23 @@ function! bookmarker_start#open() abort
 	call bufload(l:dashboard_buffer)
 	execute 'hide buffer ' . l:dashboard_buffer
 
+	" Set the file type for syntax highlighting
+	setfiletype bookmarker
+
 	" Save the previous buffer number in the dashboard.
 	let b:bookmarker_start_previous_buffer = l:previous_buffer
+
+	" Rember the starting directory.
+	let b:bookmarker_path_start_directory = get(
+		\ b:,
+		\ 'bookmarker_path_start_directory',
+		\ getcwd()
+		\ )
+
+	" Changine status line
+	let w:bookmarker_previous_statusline = &l:statusline
+
+	setlocal statusline=\ Bookmarker
 
 	" Turn in into a plugin-controller scratch buffer.
 	setlocal noswapfile
@@ -29,8 +44,9 @@ function! bookmarker_start#open() abort
 	" Give the buffer a recognizable name.
 	execute 'file [Bookmarker]'
 
-	" Write the the layout Dasboard.
-	call setline(1, bookmarker_start#ui#layout())
+	" Render the Home page
+	call setline(1, bookmarker_start#ui#layout(
+		\ b:bookmarker_path_start_directory))
 
 	" Protect the dashboard from accidental editing.
 	setlocal nomodifiable
@@ -49,9 +65,23 @@ function! bookmarker_start#close() abort
 		\ -1
 		\ )
 
+	let l:previous_statusline = get(
+		\ w:,
+		\ 'bookmarker_previous_statusline',
+		\ ''
+		\ )
+
 	if l:previous_buffer > 0
 				\ && l:previous_buffer != l:dashboard_buffer
 				\ && bufexists(l:previous_buffer)
+
+		" Restore the previous status line
+		let &l:statusline = l:previous_statusline
+
+		" Let airline redraw the status line
+		if exists(':AirlineRefresh')
+			silent! AirlineRefresh
+		endif
 
 		" Go back to the previous buffer
 		execute 'buffer ' . l:previous_buffer
