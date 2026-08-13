@@ -76,7 +76,7 @@ function! bookmarker#open() abort
 	nnoremap <silent><buffer> f :call bookmarker#finder#file()<CR>
 
 	" This mapping open reggrep
-	nnoremap <silent><buffer> g :call bookmarker#finder#grep()<CR>
+	nnoremap <silent><buffer> / :call bookmarker#finder#grep()<CR>
 
 	augroup bookmarker_cursor
 		autocmd!
