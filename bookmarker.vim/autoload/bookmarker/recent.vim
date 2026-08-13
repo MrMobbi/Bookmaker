@@ -13,6 +13,7 @@ function! bookmarker#recent#get(directory) abort
         " Ignore NEERDTree buffers.
         if stridx(l:path, 'NERD_tree_') == 0
             continue
+        endif
 
         " Ignore files that no longer exist
         if !filereadable(l:path)

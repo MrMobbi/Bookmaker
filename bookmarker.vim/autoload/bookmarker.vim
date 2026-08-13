@@ -17,10 +17,10 @@ endfunction
 
 function! bookmarker#start() abort
 
-	" Remeber the current file buffer.
+	" Remeber the current file buffer
 	let l:previous_buffer = bufnr('%')
 
-	" Create and enter a distinct dashboard buffer.
+	" Create and enter a distinct dashboard buffer
 	let l:dashboard_buffer = bufadd('')
 
 	call setbufvar(l:dashboard_buffer, '&buftype', 'nofile')
@@ -34,7 +34,7 @@ function! bookmarker#start() abort
 	" Set the file type for syntax highlighting
 	setfiletype bookmarker
 
-	" Save the previous buffer number in the dashboard.
+	" Save the previous buffer number in the dashboard
 	let b:bookmarker_previous_buffer = l:previous_buffer
 
 	" Rember the starting directory.
@@ -44,7 +44,7 @@ function! bookmarker#start() abort
 		\ getcwd())
 
 
-	" Turn in into a plugin-controller scratch buffer.
+	" Turn in into a plugin-controller scratch buffer
 	setlocal noswapfile
 	setlocal nobuflisted
 	setlocal nonumber
@@ -52,10 +52,10 @@ function! bookmarker#start() abort
 	setlocal nowrap
 	setlocal nocursorline
 
-	" Give the buffer a recognizable name.
+	" Give the buffer a recognizable name
 	execute 'file [Bookmarker]'
 
-	" Make Airline display Bookmarker like Startify.
+	" Make Airline display
 	if exists(':AirlineRefresh')
 		if !exists('g:airline_filetype_overrides')
 			let g:airline_filetype_overrides = {}
@@ -78,7 +78,8 @@ function! bookmarker#start() abort
 	" Render the Home page
 	call setline(1, bookmarker#ui#layout(
 		\ b:bookmarker_path_directory,
-		\ b:bookmarker_quick_bookmarks))
+		\ b:bookmarker_quick_bookmarks,
+		\ b:bookmarker_recent_files))
 
 	" Protect the dashboard from accidental editing.
 	setlocal nomodifiable
