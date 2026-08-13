@@ -62,6 +62,9 @@ function! bookmarker#open() abort
 	" Set up the mapping for the bookmarks
 	call bookmarker#bookmarks#mappings()
 
+	" This mapping open the fzf finder
+	nnoremap <silent><buffer> f :call bookmarker#finder#file()<CR>
+
 	augroup bookmarker_cursor
 		autocmd!
 		autocmd CursorMoved <buffer> call bookmarker#cursor#lock()
@@ -102,4 +105,24 @@ function! bookmarker#close() abort
         return
     endif
     quit
+endfunction
+
+function! bookmarker#restore() abort
+    if &filetype !=# 'bookmarker'
+        return
+		echomsg 'bookmarker#restore'
+    endif
+
+
+    " Restore Bookmarker's statusline.
+    setlocal statusline=\ Bookmarker
+
+    " Restore the cursor to the last selectable line.
+    if exists('b:bookmarker_last_line')
+        call bookmarker#cursor#move(
+                    \ b:bookmarker_last_line
+                    \ )
+    endif
+
+    redrawstatus
 endfunction
