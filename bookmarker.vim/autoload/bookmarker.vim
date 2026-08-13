@@ -1,4 +1,20 @@
 
+function! bookmarker#command(command) abort
+	if empty(a:command)
+		call bookmarker#open()
+		return
+	endif
+
+	if a:command ==# 'help'
+		call bookmarker#help#open()
+		return
+	endif
+
+	echohl WarningMsg
+	echomsg '[Bookmarker] Unknown command: ' . a:command
+	echohl None
+endfunction
+
 function! bookmarker#open() abort
 
 	" Remeber the current file buffer.
