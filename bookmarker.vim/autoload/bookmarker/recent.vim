@@ -40,3 +40,46 @@ function! bookmarker#recent#get(directory) abort
 
     return l:recent_file
 endfunction
+
+function! bookmarker#recent#mappings() abort
+    if !exists('b:bookmarker_recent_files')
+        return
+    endif
+
+    let l:index = 0
+
+    for l:file in b:bookmarker_recent_files
+        " Entries 0-8 use 1-9 key
+        " Entry 9 uses 0 key
+        let l:key = l:index == 9 ? '0' : string(l:index + 1)
+
+        execute 'nnoremap <silent><nowait><buffer> '
+                    \ . l:key
+                    \ . ' :call bookmarker#bookmarks#open("'
+                    \ . l:index
+                    \ . '")<CR>'
+
+        let l:index += 1
+    endfor
+endfunction
+
+function! bookmarker#recent#open(index) abort
+    if !exists(b: bookmarker_recent_files)
+        return
+    endif
+
+    if a:index < 0 || a:index >= len(b:bookmarker_recent_files)
+        return
+    endif
+
+    let l:path = b:bookmarker_recent_files[a:index]
+
+    if !filereadable(l:path)
+        echohl WarningMsg
+        echomsg '[Bookmarker] File not found: ' . l:path
+        echohl None
+        return
+    endif
+
+    execute 'edit ' . fnameescape(l:path)
+endfunction

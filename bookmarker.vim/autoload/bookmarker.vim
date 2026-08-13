@@ -91,6 +91,9 @@ function! bookmarker#start() abort
 	" Set up the mapping for the bookmarks
 	call bookmarker#bookmarks#mappings()
 
+	" Set up the mappings for the recent files
+	call bookmarker#recent#mappings()
+
 	" This mapping open the fzf finder
 	nnoremap <silent><buffer> f :call bookmarker#finder#file()<CR>
 
