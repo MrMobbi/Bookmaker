@@ -26,13 +26,9 @@ function! bookmarker#bookmarks#get() abort
             continue
         endif
 
-        call add(
-                    \ l:bookmarks,
-                    \ {
-                    \     'key': l:key,
-                    \     'path': l:path,
-                    \ }
-                    \ )
+        call add(l:bookmarks,{
+                \ 'key': l:key,
+                \ 'path': l:path,})
     endfor
 
     return l:bookmarks
@@ -58,7 +54,7 @@ function! bookmarker#bookmarks#open(key) abort
     endif
 
     for l:bookmark in b:bookmarker_quick_bookmarks
-        if l:bookmark.key !==# a:key
+        if l:bookmark.key !=# a:key
             continue
         endif
 
