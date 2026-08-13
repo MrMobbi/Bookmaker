@@ -26,13 +26,9 @@ function! bookmarker#bookmarks#get() abort
             continue
         endif
 
-        call add(
-                    \ l:bookmarks,
-                    \ {
-                    \     'key': l:key,
-                    \     'path': l:path,
-                    \ }
-                    \ )
+        call add(l:bookmarks,{
+                \ 'key': l:key,
+                \ 'path': l:path,})
     endfor
 
     return l:bookmarks
@@ -50,4 +46,44 @@ function! bookmarker#bookmarks#icon(path) abort
                 \ )
 
     return WebDevIconsGetFileTypeSymbol(l:path)
+endfunction
+
+function! bookmarker#bookmarks#open(key) abort
+    if !exists('b:bookmarker_quick_bookmarks')
+        return
+    endif
+
+    for l:bookmark in b:bookmarker_quick_bookmarks
+        if l:bookmark.key !=# a:key
+            continue
+        endif
+
+        let l:path = fnamemodify(
+                    \ expand(l:bookmark.path),
+                    \ ':p')
+
+        if !filereadable(l:path)
+            echohl WarningMsg
+            echomsg '[Bookmarker] File not found: ' . l:path
+            echohl None
+            return
+        endif
+
+        execute 'edit ' . fnameescape(l:path)
+        return
+    endfor
+endfunction
+
+function! bookmarker#bookmarks#mappings() abort
+    if !exists('b:bookmarker_quick_bookmarks')
+        return
+    endif
+
+    for l:bookmark in b:bookmarker_quick_bookmarks
+        execute 'nnoremap <silent><buffer> '
+                    \ . l:bookmark.key
+                    \ . ' :call bookmarker#bookmarks#open('
+                    \ . string(l:bookmark.key)
+                    \ . ')<CR>'
+    endfor
 endfunction

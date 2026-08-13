@@ -44,13 +44,13 @@ function! bookmarker#open() abort
 	" Give the buffer a recognizable name.
 	execute 'file [Bookmarker]'
 
-
-	let l:bookmarks = bookmarker#bookmarks#get()
+	" Get the bookmarks
+	let b:bookmarker_quick_bookmarks = bookmarker#bookmarks#get()
 
 	" Render the Home page
 	call setline(1, bookmarker#ui#layout(
 		\ b:bookmarker_path_directory,
-		\ l:bookmarks))
+		\ b:bookmarker_quick_bookmarks))
 
 	" Protect the dashboard from accidental editing.
 	setlocal nomodifiable
@@ -58,6 +58,9 @@ function! bookmarker#open() abort
 
 	" Move the cursor to the first selectable item.
 	call bookmarker#cursor#setup()
+
+	" Set up the mapping for the bookmarks
+	call bookmarker#bookmarks#mappings()
 
 	augroup bookmarker_cursor
 		autocmd!
