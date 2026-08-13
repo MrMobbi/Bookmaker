@@ -12,4 +12,4 @@ if !exists("g:bookmarker_path_directory")
 endif
 
 " Register the :Bookmarker command
-command! Bookmarker call bookmarker#open()
+command! -nargs=? Bookmarker call bookmarker#command(<q-args>)
