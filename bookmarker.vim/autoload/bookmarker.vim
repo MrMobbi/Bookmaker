@@ -28,10 +28,6 @@ function! bookmarker#open() abort
 		\ getcwd()
 		\ )
 
-	" Changine status line
-	let w:bookmarker_previous_statusline = &l:statusline
-
-	setlocal statusline=\ Bookmarker
 
 	" Turn in into a plugin-controller scratch buffer.
 	setlocal noswapfile
@@ -43,6 +39,11 @@ function! bookmarker#open() abort
 
 	" Give the buffer a recognizable name.
 	execute 'file [Bookmarker]'
+
+
+	if exists(':AirlineRefresh')
+		silent! AirlineRefresh
+	endif
 
 	" Get the bookmarks
 	let b:bookmarker_quick_bookmarks = bookmarker#bookmarks#get()
@@ -105,24 +106,4 @@ function! bookmarker#close() abort
         return
     endif
     quit
-endfunction
-
-function! bookmarker#restore() abort
-    if &filetype !=# 'bookmarker'
-        return
-		echomsg 'bookmarker#restore'
-    endif
-
-
-    " Restore Bookmarker's statusline.
-    setlocal statusline=\ Bookmarker
-
-    " Restore the cursor to the last selectable line.
-    if exists('b:bookmarker_last_line')
-        call bookmarker#cursor#move(
-                    \ b:bookmarker_last_line
-                    \ )
-    endif
-
-    redrawstatus
 endfunction

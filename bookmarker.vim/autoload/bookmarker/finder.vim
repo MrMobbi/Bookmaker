@@ -14,7 +14,4 @@ function! bookmarker#finder#file() abort
                 \ )
 
     execute 'FZF ' . fnameescape(l:directory)
-
-    " FZF was cancelled, so we're back on Bookmarker.
-    call bookmarker#restore()
 endfunction
