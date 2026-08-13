@@ -45,12 +45,12 @@ function! bookmarker#open() abort
 	execute 'file [Bookmarker]'
 
 	" Get the bookmarks
-	let l:bookmarker_quick_bookmarks = bookmarker#bookmarks#get()
+	let b:bookmarker_quick_bookmarks = bookmarker#bookmarks#get()
 
 	" Render the Home page
 	call setline(1, bookmarker#ui#layout(
 		\ b:bookmarker_path_directory,
-		\ l:bookmarker_quick_bookmarks))
+		\ b:bookmarker_quick_bookmarks))
 
 	" Protect the dashboard from accidental editing.
 	setlocal nomodifiable
