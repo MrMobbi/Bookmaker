@@ -40,8 +40,17 @@ function! bookmarker#open() abort
 	" Give the buffer a recognizable name.
 	execute 'file [Bookmarker]'
 
-
+	" Make Airline display Bookmarker like Startify.
 	if exists(':AirlineRefresh')
+		if !exists('g:airline_filetype_overrides')
+			let g:airline_filetype_overrides = {}
+		endif
+
+		let g:airline_filetype_overrides['bookmarker'] = [
+					\ 'Bookmarker',
+					\ ''
+					\ ]
+
 		silent! AirlineRefresh
 	endif
 
