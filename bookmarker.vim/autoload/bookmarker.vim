@@ -75,6 +75,9 @@ function! bookmarker#open() abort
 	" This mapping open the fzf finder
 	nnoremap <silent><buffer> f :call bookmarker#finder#file()<CR>
 
+	" This mapping open reggrep
+	nnoremap <silent><buffer> g :call bookmarker#finder#grep()<CR>
+
 	augroup bookmarker_cursor
 		autocmd!
 		autocmd CursorMoved <buffer> call bookmarker#cursor#lock()
