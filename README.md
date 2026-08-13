@@ -361,6 +361,7 @@ Planned features include:
 A license has not been added yet.
 
 # Bookmaker
+``` text
 command! BookmarkerReload
 \ source ~/project/Bookmarker/bookmarker.vim/plugin/bookmarker.vim |
 \ source ~/project/Bookmarker/bookmarker.vim/autoload/bookmarker.vim |
@@ -381,3 +382,4 @@ let g:bookmarker_quick_bookmarks = [
       \ { 't' : '~/.config/terminator/config' },
       \ { 'c' : '~/.vim/plugin/cheatsheet.vim' },
       \ ]
+```

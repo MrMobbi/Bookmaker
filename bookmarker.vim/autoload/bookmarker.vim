@@ -1,7 +1,7 @@
 
 function! bookmarker#command(command) abort
 	if empty(a:command)
-		call bookmarker#open()
+		call bookmarker#start()
 		return
 	endif
 
@@ -15,7 +15,7 @@ function! bookmarker#command(command) abort
 	echohl None
 endfunction
 
-function! bookmarker#open() abort
+function! bookmarker#start() abort
 
 	" Remeber the current file buffer.
 	let l:previous_buffer = bufnr('%')
@@ -41,8 +41,7 @@ function! bookmarker#open() abort
 	let b:bookmarker_path_directory = get(
 		\ g:,
 		\ 'bookmarker_path_directory',
-		\ getcwd()
-		\ )
+		\ getcwd())
 
 
 	" Turn in into a plugin-controller scratch buffer.
@@ -64,14 +63,17 @@ function! bookmarker#open() abort
 
 		let g:airline_filetype_overrides['bookmarker'] = [
 					\ 'Bookmarker',
-					\ ''
-					\ ]
+					\ '']
 
 		silent! AirlineRefresh
 	endif
 
 	" Get the bookmarks
 	let b:bookmarker_quick_bookmarks = bookmarker#bookmarks#get()
+
+	" Get the recent files
+	let b:bookmarker_recent_files = bookmarker#recent#get(
+		\ b:bookmarker_path_directory)
 
 	" Render the Home page
 	call setline(1, bookmarker#ui#layout(
@@ -108,8 +110,7 @@ function! bookmarker#close() abort
     " Find all listed buffers.
     let l:listed_buffers = filter(
                 \ range(1, bufnr('$')),
-                \ 'buflisted(v:val)'
-                \ )
+                \ 'buflisted(v:val)')
 
     " There are real/listed buffers available.
     if !empty(l:listed_buffers)
