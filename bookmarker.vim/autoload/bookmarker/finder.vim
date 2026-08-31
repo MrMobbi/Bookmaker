@@ -10,8 +10,7 @@ function! bookmarker#finder#file() abort
     let l:directory = get(
                 \ b:,
                 \ 'bookmarker_path_directory',
-                \ getcwd()
-                \ )
+                \ getcwd())
 
     execute 'FZF ' . fnameescape(l:directory)
 endfunction
@@ -27,8 +26,7 @@ function! bookmarker#finder#grep() abort
     let l:directory = get(
                 \ b:,
                 \ 'bookmarker_path_directory',
-                \ getcwd()
-                \ )
+                \ getcwd())
 
     execute 'lcd ' . fnameescape(l:directory)
     Rg

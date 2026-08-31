@@ -1,9 +1,7 @@
 function! bookmarker#bookmarks#get() abort
     let l:raw_bookmarks = get(
                 \ g:,
-                \ 'bookmarker_quick_bookmarks',
-                \ []
-                \ )
+                \ 'bookmarker_quick_bookmarks', [])
 
     let l:bookmarks = []
 
@@ -42,8 +40,7 @@ function! bookmarker#bookmarks#icon(path) abort
 
     let l:path = fnamemodify(
                 \ expand(a:path),
-                \ ':p'
-                \ )
+                \ ':p')
 
     return WebDevIconsGetFileTypeSymbol(l:path)
 endfunction
