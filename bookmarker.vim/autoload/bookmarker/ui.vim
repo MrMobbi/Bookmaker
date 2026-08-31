@@ -1,5 +1,6 @@
 function! bookmarker#ui#layout(start_directory,
     \ bookmarks,
+    \ directory_bookmarks,
     \ recent_files) abort
     " Display ~/projects instead of /home/user/projects.
     let l:directory = fnamemodify(
@@ -33,10 +34,19 @@ function! bookmarker#ui#layout(start_directory,
     call extend(l:lines, [
                 \ '',
                 \ '		Bookmark folders',
-                \ '',
-                \ '  [C] Configuration              ~/.config/',
-                \ '  [P] Projects                   ~/projects/',
-                \ '  [D] Documents                  ~/Documents/',
+                \ ''])
+
+    for l:directory_bookmark in a:directory_bookmarks
+        let l:path = fnamemodify(expand(l:directory_bookmark.path), ':~')
+        let l:line = printf('  [%s] %-26s %s',
+                    \ l:directory_bookmark.key,
+                    \ l:directory_bookmark.label,
+                    \ l:path)
+
+        call add(l:lines, l:line)
+    endfor
+
+    call extend(l:lines, [
                 \ '',
                 \ '		Recent files in current directory',
                 \ '',

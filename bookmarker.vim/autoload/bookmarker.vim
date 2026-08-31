@@ -71,6 +71,9 @@ function! bookmarker#start() abort
 	" Get the bookmarks
 	let b:bookmarker_quick_bookmarks = bookmarker#bookmarks#get()
 
+	" Get the directory bookmarks
+	let b:bookmarker_directory_bookmarks = bookmarker#directories#get()
+
 	" Get the recent files
 	let b:bookmarker_recent_files = bookmarker#recent#get(
 		\ b:bookmarker_path_directory)
@@ -79,6 +82,7 @@ function! bookmarker#start() abort
 	call setline(1, bookmarker#ui#layout(
 		\ b:bookmarker_path_directory,
 		\ b:bookmarker_quick_bookmarks,
+		\ b:bookmarker_directory_bookmarks,
 		\ b:bookmarker_recent_files))
 
 	" Protect the dashboard from accidental editing.
@@ -91,6 +95,9 @@ function! bookmarker#start() abort
 	" Set up the mapping for the bookmarks
 	call bookmarker#bookmarks#mappings()
 
+	" Set up the mappings for the directory bookmarks
+	call bookmarker#directories#mappings()
+
 	" Set up the mappings for the recent files
 	call bookmarker#recent#mappings()
 
@@ -99,6 +106,9 @@ function! bookmarker#start() abort
 
 	" This mapping open reggrep
 	nnoremap <silent><buffer> / :call bookmarker#finder#grep()<CR>
+
+	" Open the item under the cursor.
+	nnoremap <silent><buffer> <CR> :call bookmarker#open_selected()<CR>
 
 	augroup bookmarker_cursor
 		autocmd!
@@ -139,4 +149,69 @@ function! bookmarker#close() abort
         return
     endif
     quit
+endfunction
+
+function! bookmarker#open_selected() abort
+    let l:key = bookmarker#cursor#selected_key()
+
+    if empty(l:key)
+        return
+    endif
+
+    let l:current_line = line('.')
+    let l:quick_bookmarks_line = 0
+    let l:bookmark_folders_line = 0
+    let l:recent_files_line = 0
+
+    for l:line_number in range(1, line('$'))
+        let l:text = getline(l:line_number)
+
+        if l:text =~# '^\s*Quick bookmarks\s*$'
+            let l:quick_bookmarks_line = l:line_number
+        elseif l:text =~# '^\s*Bookmark folders\s*$'
+            let l:bookmark_folders_line = l:line_number
+        elseif l:text =~# '^\s*Recent files in current directory\s*$'
+            let l:recent_files_line = l:line_number
+        endif
+    endfor
+
+    let l:on_quick_bookmark = l:quick_bookmarks_line > 0
+                \ && l:current_line > l:quick_bookmarks_line
+                \ && (l:bookmark_folders_line == 0
+                \     || l:current_line < l:bookmark_folders_line)
+
+    if l:on_quick_bookmark
+        call bookmarker#bookmarks#open(l:key)
+        return
+    endif
+
+    if l:bookmark_folders_line > 0
+                \ && l:current_line > l:bookmark_folders_line
+                \ && (l:recent_files_line == 0
+                \     || l:current_line < l:recent_files_line)
+
+        call bookmarker#directories#open(l:key)
+        return
+    endif
+
+    if l:recent_files_line > 0
+                \ && l:current_line > l:recent_files_line
+                \ && l:key =~# '^\d$'
+
+        let l:index = l:key ==# '0' ? 9 : str2nr(l:key) - 1
+        call bookmarker#recent#open(l:index)
+        return
+    endif
+
+    if l:key ==# 'f'
+        call bookmarker#finder#file()
+        return
+    endif
+
+    if l:key ==# '/'
+        call bookmarker#finder#grep()
+        return
+    endif
+
+    call bookmarker#bookmarks#open(l:key)
 endfunction

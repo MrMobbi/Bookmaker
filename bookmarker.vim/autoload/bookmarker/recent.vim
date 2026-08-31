@@ -55,7 +55,7 @@ function! bookmarker#recent#mappings() abort
 
         execute 'nnoremap <silent><nowait><buffer> '
                     \ . l:key
-                    \ . ' :call bookmarker#bookmarks#open("'
+                    \ . ' :call bookmarker#recent#open("'
                     \ . l:index
                     \ . '")<CR>'
 
@@ -64,7 +64,7 @@ function! bookmarker#recent#mappings() abort
 endfunction
 
 function! bookmarker#recent#open(index) abort
-    if !exists(b: bookmarker_recent_files)
+    if !exists('b:bookmarker_recent_files')
         return
     endif
 

@@ -1,9 +1,8 @@
+# Bookmarker
 
- # Bookmarker
+A lightweight Vim dashboard for quickly opening bookmarks, directory bookmarks, recent files, and project search tools.
 
-A lightweight Vim dashboard for quickly opening bookmarks, finding files, and searching inside your current project.
-
-Bookmarker is inspired by dashboard plugins such as Startify, but focuses on providing a simple home screen built around your own file bookmarks and project navigation.
+Bookmarker is inspired by dashboard plugins such as Startify, but focuses on a small home screen built around your own project navigation shortcuts.
 
 ```text
                          BOOKMARKER
@@ -21,19 +20,18 @@ Bookmarker is inspired by dashboard plugins such as Startify, but focuses on pro
 
                 Bookmark folders
 
-  [C] ~/.config/
-  [P] ~/projects/
-  [D] ~/Documents/
+  [C] Configuration              ~/.config/
+  [P] Projects                   ~/projects/
+  [D] Documents                  ~/Documents/
 
 
                 Recent files in current directory
 
                 PWD: [~/projects/my-project]
 
-  [1] Recent file...
-  [2] Recent file...
-  [3] Recent file...
-
+  [1] README.md
+  [2] autoload/bookmarker.vim
+  [3] plugin/bookmarker.vim
 
         <CR> open    ? help    q close
 ```
@@ -44,21 +42,31 @@ Bookmarker currently provides:
 
 * A dedicated Vim dashboard buffer
 * Configurable quick file bookmarks
-* One-key bookmark opening
-* Optional file icons with `vim-devicons`
+* Configurable directory bookmarks
+* Directory bookmarks opened with Vim's `:Explore` / netrw for now
+* Recent files from the startup directory, based on `v:oldfiles`
+* Numbered recent-file shortcuts, from `1` through `9` and then `0`
+* `<CR>` to open the item under the cursor
+* One-key opening for quick bookmarks, directory bookmarks, and recent files
 * File searching with FZF
-* Text searching with ripgrep and FZF
+* Text searching with ripgrep through `:Rg`
 * Searches rooted in the directory where Vim was started
 * Buffer-local mappings that do not replace your normal Vim mappings
 * Syntax highlighting for the Bookmarker dashboard
-* vim-airline integration
+* Optional file icons with `vim-devicons`
+* Optional vim-airline integration
 * `q` to return to another buffer or quit Vim when no useful buffer remains
 
-More features are planned, including bookmark folders and recent files.
+Bookmarker is still under development. Directory bookmarks currently open in netrw via `:Explore`; this is intentionally a first step, not the final directory-navigation design.
 
 ## Requirements
 
 Bookmarker is written for Vim.
+
+Required:
+
+* Vim with `+eval`
+* netrw, for directory bookmarks opened with `:Explore` (normally bundled with Vim)
 
 For file searching:
 
@@ -68,6 +76,7 @@ For file searching:
 For text searching:
 
 * [ripgrep](https://github.com/BurntSushi/ripgrep)
+* `:Rg`, provided by fzf.vim's ripgrep integration
 
 Optional:
 
@@ -88,7 +97,7 @@ Plug 'MrMobbi/Bookmaker', {
       \ 'rtp': 'bookmarker.vim',
       \ }
 
-" File finder
+" File finder and :Rg
 Plug 'junegunn/fzf', { 'do': { -> fzf#install() } }
 Plug 'junegunn/fzf.vim'
 
@@ -104,6 +113,14 @@ Then run:
 :PlugInstall
 ```
 
+For local development with vim-plug, point Vim directly at the cloned runtime directory:
+
+```vim
+Plug '~/projects/Bookmarker/bookmarker.vim'
+```
+
+Adjust the path to match where you cloned the repository.
+
 ## Usage
 
 Open Bookmarker with:
@@ -118,31 +135,39 @@ You can also create a mapping in your `.vimrc`:
 nnoremap <silent> <leader>bm :Bookmarker<CR>
 ```
 
-For example, if your leader key is Space:
-
-```text
-Space b m
-```
-
-opens the dashboard.
-
 To display Bookmarker help:
 
 ```vim
 :Bookmarker help
 ```
 
-## Quick bookmarks
+## Dashboard mappings
 
-Quick bookmarks are configured in your `.vimrc`.
+Inside the Bookmarker dashboard:
 
-Each bookmark contains:
+| Key                     | Action                       |
+| ----------------------- | ---------------------------- |
+| `<CR>`                  | Open the item under cursor   |
+| `f`                     | Find a file with FZF         |
+| `/`                     | Search text with ripgrep     |
+| configured file key     | Open that quick bookmark     |
+| configured directory key | Open that directory bookmark |
+| recent file number      | Open that recent file        |
+| `q`                     | Close Bookmarker             |
+
+All mappings are buffer-local to the Bookmarker dashboard.
+
+## Quick file bookmarks
+
+Quick file bookmarks are configured in your `.vimrc` with `g:bookmarker_quick_bookmarks`.
+
+Each bookmark is a dictionary with one key-value pair:
 
 ```text
-key → file path
+key -> file path
 ```
 
-For example:
+Example:
 
 ```vim
 let g:bookmarker_quick_bookmarks = [
@@ -154,7 +179,7 @@ let g:bookmarker_quick_bookmarks = [
       \ ]
 ```
 
-Bookmarker will display them as:
+Bookmarker displays them as:
 
 ```text
 Quick bookmarks
@@ -166,31 +191,73 @@ Quick bookmarks
 [t] ~/.config/terminator/config
 ```
 
-Press the key shown inside `[]` to open the corresponding file.
+Open a quick bookmark by pressing its key, or by moving the cursor onto its line and pressing `<CR>`.
 
-For example:
-
-```text
-v
-```
-
-opens:
+If the file does not exist, Bookmarker shows a warning:
 
 ```text
-~/.vimrc
+[Bookmarker] File not found: ...
 ```
 
-These mappings only exist inside the Bookmarker buffer. Your normal Vim mappings remain unchanged everywhere else.
+## Directory bookmarks
+
+Directory bookmarks are configured in your `.vimrc` with `g:bookmarker_directory_bookmarks`.
+
+Each directory bookmark may use a label and a path:
+
+```vim
+let g:bookmarker_directory_bookmarks = [
+      \ { 'C': { 'label': 'Configuration', 'path': '~/.config/' } },
+      \ { 'P': { 'label': 'Projects', 'path': '~/projects/' } },
+      \ { 'D': { 'label': 'Documents', 'path': '~/Documents/' } },
+      \ ]
+```
+
+A shorthand string form is also accepted:
+
+```vim
+let g:bookmarker_directory_bookmarks = [
+      \ { 'P': '~/projects/' },
+      \ ]
+```
+
+If no directory bookmarks are configured, Bookmarker defaults to:
+
+```vim
+let g:bookmarker_directory_bookmarks = [
+      \ { 'C': { 'label': 'Configuration', 'path': '~/.config/' } },
+      \ { 'P': { 'label': 'Projects', 'path': '~/projects/' } },
+      \ { 'D': { 'label': 'Documents', 'path': '~/Documents/' } },
+      \ ]
+```
+
+Open a directory bookmark by pressing its key, or by moving the cursor onto its line and pressing `<CR>`.
+
+For now, directory bookmarks open with Vim's `:Explore` command. Bookmarker loads netrw if `:Explore` is not already available, and falls back to editing the directory path if needed.
+
+If the directory does not exist, Bookmarker shows a warning:
+
+```text
+[Bookmarker] Directory not found: ...
+```
+
+## Recent files
+
+Bookmarker shows recent files from Vim's `v:oldfiles`, filtered to the directory where Vim was started.
+
+Recent files behavior:
+
+* Only readable files are shown
+* Files outside the startup directory are ignored
+* Duplicate paths are skipped
+* At most 10 recent files are shown
+* Recent files use number keys `1` through `9`, then `0` for the tenth entry
+
+Open a recent file by pressing its number, or by moving the cursor onto its line and pressing `<CR>`.
 
 ## File finder
 
-Press:
-
-```text
-f
-```
-
-inside Bookmarker to open FZF.
+Press `f` inside Bookmarker to open FZF.
 
 The search starts from the directory where Vim was originally launched.
 
@@ -213,34 +280,32 @@ Selecting a file opens it in Vim.
 
 ## Text search
 
-Press:
+Press `/` inside Bookmarker to search the current project using ripgrep and FZF.
 
-```text
-/
+The search is rooted in the directory where Vim was originally started. Bookmarker temporarily changes the local working directory for the dashboard window before running `:Rg`.
+
+## Startup directory
+
+Bookmarker remembers the working directory from which Vim was started in `g:bookmarker_path_directory`.
+
+For example:
+
+```sh
+cd ~/projects/bookmarker
+vim
 ```
 
-inside Bookmarker to search the current project using ripgrep and FZF.
+The dashboard keeps:
 
-The search is also rooted in the directory where Vim was originally started.
+```text
+PWD: [~/projects/bookmarker]
+```
 
-This keeps project searching independent from bookmarks and future bookmark-folder navigation.
-
-## Dashboard mappings
-
-Inside Bookmarker:
-
-| Key                     | Action                   |
-| ----------------------- | ------------------------ |
-| `f`                     | Find a file with FZF     |
-| `/`                     | Search text with ripgrep |
-| configured bookmark key | Open that bookmark       |
-| `q`                     | Close Bookmarker         |
-
-Additional navigation and actions will be added as the plugin develops.
+File finding, text searching, and recent-file filtering use this directory as the project context.
 
 ## Optional file icons
 
-If `vim-devicons` is installed, Bookmarker automatically displays an icon beside quick bookmarks.
+If `vim-devicons` is installed, Bookmarker displays an icon beside quick bookmarks and recent files.
 
 Without `vim-devicons`:
 
@@ -256,28 +321,9 @@ With `vim-devicons`:
 
 Bookmarker does not require icons to work.
 
-## Startup directory
-
-Bookmarker remembers the working directory from which Vim was started.
-
-For example:
-
-```sh
-cd ~/projects/bookmarker
-vim
-```
-
-The dashboard keeps:
-
-```text
-PWD: [~/projects/bookmarker]
-```
-
-File finding, text searching, and future recent-file functionality use this directory as the project context.
-
 ## Statusline
 
-Bookmarker supports vim-airline and uses a dashboard-style Airline section similar to Startify when Airline is available.
+Bookmarker supports vim-airline and uses a dashboard-style Airline section when Airline is available.
 
 vim-airline is optional; Bookmarker can still be used without it.
 
@@ -286,26 +332,23 @@ vim-airline is optional; Bookmarker can still be used without it.
 Clone the repository:
 
 ```sh
-git clone https://github.com/MrMobbi/Bookmaker.git
-cd Bookmaker
+git clone git@github.com:MrMobbi/Bookmaker.git Bookmarker
+cd Bookmarker
 ```
 
-For local development with vim-plug, point Vim directly at the cloned runtime directory:
-
-```vim
-Plug '~/projects/Bookmaker/bookmarker.vim'
-```
-
-A development reload command can also be useful while working on the plugin:
+A development reload command can be useful while working on the plugin:
 
 ```vim
 command! BookmarkerReload
-      \ source ~/projects/Bookmaker/bookmarker.vim/plugin/bookmarker.vim |
-      \ source ~/projects/Bookmaker/bookmarker.vim/autoload/bookmarker.vim |
-      \ source ~/projects/Bookmaker/bookmarker.vim/autoload/bookmarker/ui.vim |
-      \ source ~/projects/Bookmaker/bookmarker.vim/autoload/bookmarker/finder.vim |
-      \ source ~/projects/Bookmaker/bookmarker.vim/autoload/bookmarker/cursor.vim |
-      \ source ~/projects/Bookmaker/bookmarker.vim/autoload/bookmarker/bookmarks.vim |
+      \ source ~/projects/Bookmarker/bookmarker.vim/plugin/bookmarker.vim |
+      \ source ~/projects/Bookmarker/bookmarker.vim/autoload/bookmarker.vim |
+      \ source ~/projects/Bookmarker/bookmarker.vim/autoload/bookmarker/ui.vim |
+      \ source ~/projects/Bookmarker/bookmarker.vim/autoload/bookmarker/finder.vim |
+      \ source ~/projects/Bookmarker/bookmarker.vim/autoload/bookmarker/cursor.vim |
+      \ source ~/projects/Bookmarker/bookmarker.vim/autoload/bookmarker/bookmarks.vim |
+      \ source ~/projects/Bookmarker/bookmarker.vim/autoload/bookmarker/directories.vim |
+      \ source ~/projects/Bookmarker/bookmarker.vim/autoload/bookmarker/help.vim |
+      \ source ~/projects/Bookmarker/bookmarker.vim/autoload/bookmarker/recent.vim |
       \ echo 'Bookmarker reloaded'
 
 nnoremap <leader>br :BookmarkerReload<CR>
@@ -316,70 +359,50 @@ Adjust the path to match where you cloned the repository.
 ## Project structure
 
 ```text
-Bookmaker/
+Bookmarker/
+├── README.md
 ├── bookmarker.vim/
 │   ├── autoload/
 │   │   ├── bookmarker.vim
 │   │   └── bookmarker/
 │   │       ├── bookmarks.vim
 │   │       ├── cursor.vim
+│   │       ├── directories.vim
 │   │       ├── finder.vim
+│   │       ├── help.vim
+│   │       ├── recent.vim
 │   │       └── ui.vim
 │   ├── plugin/
 │   │   └── bookmarker.vim
 │   └── syntax/
 │       └── bookmarker.vim
-└── README.md
+└── docs/
 ```
 
 The different modules are responsible for separate parts of Bookmarker:
 
 * `plugin/bookmarker.vim` — plugin initialization and `:Bookmarker`
-* `autoload/bookmarker.vim` — dashboard lifecycle
-* `autoload/bookmarker/bookmarks.vim` — bookmark configuration and opening
-* `autoload/bookmarker/cursor.vim` — dashboard cursor navigation
+* `autoload/bookmarker.vim` — dashboard lifecycle and selected-item dispatch
+* `autoload/bookmarker/bookmarks.vim` — quick file bookmark configuration, mappings, and opening
+* `autoload/bookmarker/cursor.vim` — dashboard cursor navigation and selected-key detection
+* `autoload/bookmarker/directories.vim` — directory bookmark configuration, mappings, and Explore opening
 * `autoload/bookmarker/finder.vim` — FZF and ripgrep integration
+* `autoload/bookmarker/help.vim` — `:Bookmarker help` output
+* `autoload/bookmarker/recent.vim` — recent-file collection, mappings, and opening
 * `autoload/bookmarker/ui.vim` — dashboard layout
 * `syntax/bookmarker.vim` — Bookmarker syntax highlighting
 
 ## Roadmap
 
-Bookmarker is still under development.
+Bookmarker is still under development. Possible next steps include:
 
-Planned features include:
-
-* Bookmark folders
+* Richer directory bookmark navigation beyond the current `:Explore` implementation
 * Nested bookmark navigation
-* Recent files from the startup directory
-* Numbered recent-file shortcuts
-* Improved help screen
-* Reserved-key validation
+* Reserved-key validation for file and directory bookmarks
+* Better handling for duplicate keys across quick bookmarks, directory bookmarks, and recent files
 * More customization options
+* Automated test scripts for the headless Vim smoke checks
 
 ## License
 
 A license has not been added yet.
-
-# Bookmaker
-``` text
-command! BookmarkerReload
-\ source ~/project/Bookmarker/bookmarker.vim/plugin/bookmarker.vim |
-\ source ~/project/Bookmarker/bookmarker.vim/autoload/bookmarker.vim |
-\ source ~/project/Bookmarker/bookmarker.vim/autoload/bookmarker/ui.vim |
-\ source ~/project/Bookmarker/bookmarker.vim/autoload/bookmarker/finder.vim |
-\ source ~/project/Bookmarker/bookmarker.vim/autoload/bookmarker/cursor.vim |
-\ source ~/project/Bookmarker/bookmarker.vim/autoload/bookmarker/bookmarks.vim |
-\ echo 'Bookmarker Start reloaded'
-
-nnoremap <leader>br :BookmarkerReload<CR>
-nnoremap <leader>bm :Bookmarker<CR>
-
-let g:bookmarker_quick_bookmarks = [
-      \ { 'z' : '~/.zshrc' },
-      \ { 'v' : '~/.vimrc' },
-      \ { 'n' : '~/.config/nvim/init.lua'},
-      \ { 'i' : '~/.config/i3/config' },
-      \ { 't' : '~/.config/terminator/config' },
-      \ { 'c' : '~/.vim/plugin/cheatsheet.vim' },
-      \ ]
-```
