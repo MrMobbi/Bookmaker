@@ -1,7 +1,12 @@
-function! bookmarker#bookmarks#get() abort
+function! bookmarker#bookmarks#get(...) abort
+    let l:directory = a:0 > 0
+                \ ? fnamemodify(expand(a:1), ':p')
+                \ : get(g:, 'bookmarker_path_directory', getcwd())
+    let l:folder_config = bookmarker#folder_config(l:directory)
     let l:raw_bookmarks = get(
-                \ g:,
-                \ 'bookmarker_quick_bookmarks', [])
+                \ l:folder_config,
+                \ 'bookmarks',
+                \ get(g:, 'bookmarker_quick_bookmarks', []))
 
     let l:bookmarks = []
 
@@ -23,6 +28,8 @@ function! bookmarker#bookmarks#get() abort
         if type(l:path) != v:t_string
             continue
         endif
+
+        let l:path = bookmarker#resolve_path(l:path, l:directory)
 
         call add(l:bookmarks,{
                 \ 'key': l:key,

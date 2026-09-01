@@ -1,3 +1,20 @@
+let s:whale_path = fnamemodify(expand('<sfile>:p'), ':h:h:h:h')
+            \ . '/asset/whale.txt'
+
+function! bookmarker#ui#whale() abort
+    if !filereadable(s:whale_path)
+        return []
+    endif
+
+    let l:lines = []
+
+    for l:line in readfile(s:whale_path)
+        call add(l:lines, '             ' . l:line)
+    endfor
+
+    return l:lines
+endfunction
+
 function! bookmarker#ui#layout(start_directory,
     \ bookmarks,
     \ directory_bookmarks,
@@ -7,8 +24,15 @@ function! bookmarker#ui#layout(start_directory,
                 \ a:start_directory,
                 \ ':~')
 
-    let l:lines = [
-                \ '',
+    let l:lines = ['']
+    let l:whale = bookmarker#ui#whale()
+
+    if !empty(l:whale)
+        call extend(l:lines, l:whale)
+        call add(l:lines, '')
+    endif
+
+    call extend(l:lines, [
                 \ '                         BOOKMARKER',
                 \ '',
                 \ '  [f] Find file with FZF in the current directory',
@@ -16,7 +40,7 @@ function! bookmarker#ui#layout(start_directory,
                 \ '',
                 \ '',
                 \ '		Quick bookmarks',
-                \ '']
+                \ ''])
 
     for l:bookmark in a:bookmarks
         let l:icon = bookmarker#bookmarks#icon(l:bookmark.path)

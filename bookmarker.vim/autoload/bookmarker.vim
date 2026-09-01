@@ -10,15 +10,23 @@ function! bookmarker#command(command) abort
 		return
 	endif
 
+	if isdirectory(expand(a:command))
+		call bookmarker#start(a:command)
+		return
+	endif
+
 	echohl WarningMsg
-	echomsg '[Bookmarker] Unknown command: ' . a:command
+	echomsg '[Bookmarker] Unknown command or directory: ' . a:command
 	echohl None
 endfunction
 
-function! bookmarker#start() abort
+function! bookmarker#start(...) abort
 
-	" Remeber the current file buffer
+	" Remember the current file buffer
 	let l:previous_buffer = bufnr('%')
+	let l:directory = a:0 > 0
+			\ ? a:1
+			\ : get(g:, 'bookmarker_path_directory', getcwd())
 
 	" Create and enter a distinct dashboard buffer
 	let l:dashboard_buffer = bufadd('')
@@ -32,16 +40,13 @@ function! bookmarker#start() abort
 	execute 'hide buffer ' . l:dashboard_buffer
 
 	" Set the file type for syntax highlighting
-	setfiletype bookmarker
+	setlocal filetype=bookmarker
 
 	" Save the previous buffer number in the dashboard
 	let b:bookmarker_previous_buffer = l:previous_buffer
 
-	" Rember the starting directory.
-	let b:bookmarker_path_directory = get(
-		\ g:,
-		\ 'bookmarker_path_directory',
-		\ getcwd())
+	" Remember the directory represented by this dashboard page.
+	let b:bookmarker_path_directory = simplify(fnamemodify(expand(l:directory), ':p'))
 
 
 	" Turn in into a plugin-controller scratch buffer
@@ -68,11 +73,13 @@ function! bookmarker#start() abort
 		silent! AirlineRefresh
 	endif
 
-	" Get the bookmarks
-	let b:bookmarker_quick_bookmarks = bookmarker#bookmarks#get()
+	" Get the bookmarks for this dashboard page.
+	let b:bookmarker_quick_bookmarks = bookmarker#bookmarks#get(
+		\ b:bookmarker_path_directory)
 
-	" Get the directory bookmarks
-	let b:bookmarker_directory_bookmarks = bookmarker#directories#get()
+	" Get the directory bookmarks for this dashboard page.
+	let b:bookmarker_directory_bookmarks = bookmarker#directories#get(
+		\ b:bookmarker_path_directory)
 
 	" Get the recent files
 	let b:bookmarker_recent_files = bookmarker#recent#get(
@@ -118,6 +125,84 @@ function! bookmarker#start() abort
 	"this mapping only exists in the dashboard buffer
 	nnoremap <silent><buffer> q :call bookmarker#close()<CR>
 
+endfunction
+
+function! bookmarker#folder_config(directory) abort
+    let l:pages = get(g:, 'bookmarker_folder_bookmarks', {})
+
+    if type(l:pages) != v:t_dict
+        return {}
+    endif
+
+    let l:directory = simplify(fnamemodify(expand(a:directory), ':p'))
+
+    for l:key in keys(l:pages)
+        if simplify(fnamemodify(expand(l:key), ':p')) ==# l:directory
+            let l:config = l:pages[l:key]
+            return type(l:config) == v:t_dict ? l:config : {}
+        endif
+    endfor
+
+    return {}
+endfunction
+
+function! bookmarker#resolve_path(path, directory) abort
+    if a:path[0] ==# '~' || a:path[0] ==# '/'
+                \ || a:path =~# '^[A-Za-z]:[\\/]'
+        return simplify(fnamemodify(expand(a:path), ':p'))
+    endif
+
+    return simplify(fnamemodify(
+                \ expand(a:directory) . '/' . a:path,
+                \ ':p'))
+endfunction
+
+function! bookmarker#dashboard(directory) abort
+    let l:directory = simplify(fnamemodify(expand(a:directory), ':p'))
+
+    if !isdirectory(l:directory)
+        echohl WarningMsg
+        echomsg '[Bookmarker] Directory not found: ' . l:directory
+        echohl None
+        return
+    endif
+
+    if &filetype ==# 'bookmarker'
+        let b:bookmarker_path_directory = l:directory
+        let b:bookmarker_quick_bookmarks = bookmarker#bookmarks#get(l:directory)
+        let b:bookmarker_directory_bookmarks = bookmarker#directories#get(l:directory)
+        let b:bookmarker_recent_files = bookmarker#recent#get(l:directory)
+
+        setlocal modifiable
+        silent! %delete _
+        call setline(1, bookmarker#ui#layout(
+                    \ b:bookmarker_path_directory,
+                    \ b:bookmarker_quick_bookmarks,
+                    \ b:bookmarker_directory_bookmarks,
+                    \ b:bookmarker_recent_files))
+        setlocal nomodifiable
+        setlocal nomodified
+
+        silent! nunmap <buffer> f
+        silent! nunmap <buffer> /
+        silent! nunmap <buffer> <CR>
+        silent! nunmap <buffer> q
+        for l:key in split('abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789', '\zs')
+            silent! execute 'nunmap <buffer> ' . l:key
+        endfor
+
+        call bookmarker#cursor#setup()
+        call bookmarker#bookmarks#mappings()
+        call bookmarker#directories#mappings()
+        call bookmarker#recent#mappings()
+        nnoremap <silent><buffer> f :call bookmarker#finder#file()<CR>
+        nnoremap <silent><buffer> / :call bookmarker#finder#grep()<CR>
+        nnoremap <silent><buffer> <CR> :call bookmarker#open_selected()<CR>
+        nnoremap <silent><buffer> q :call bookmarker#close()<CR>
+        return
+    endif
+
+    call bookmarker#start(l:directory)
 endfunction
 
 function! bookmarker#close() abort

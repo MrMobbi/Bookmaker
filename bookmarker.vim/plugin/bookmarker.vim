@@ -12,4 +12,13 @@ if !exists("g:bookmarker_path_directory")
 endif
 
 " Register the :Bookmarker command
-command! -nargs=? Bookmarker call bookmarker#command(<q-args>)
+command! -nargs=? -complete=dir Bookmarker call bookmarker#command(<q-args>)
+
+" Open Bookmarker automatically when Vim starts without file arguments.
+" Set g:bookmarker_disable_at_vimenter to 1 to open it manually instead.
+augroup bookmarker_startup
+	autocmd!
+	autocmd VimEnter * if argc() == 0
+			\ && !get(g:, 'bookmarker_disable_at_vimenter', 0)
+			\ | call bookmarker#start() | endif
+augroup END

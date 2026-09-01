@@ -5,6 +5,13 @@ A lightweight Vim dashboard for quickly opening bookmarks, directory bookmarks, 
 Bookmarker is inspired by dashboard plugins such as Startify, but focuses on a small home screen built around your own project navigation shortcuts.
 
 ```text
+                    .
+                   ":"
+                 ___:____     |"\/"|
+               ,'        `.    \  /
+               |  O        \___/  |
+             ~^~^~^~^~^~^~^~^~^~^~^~^~
+
                          BOOKMARKER
 
   [f] Find file with FZF in the current directory
@@ -43,21 +50,22 @@ Bookmarker currently provides:
 * A dedicated Vim dashboard buffer
 * Configurable quick file bookmarks
 * Configurable directory bookmarks
-* Directory bookmarks opened with Vim's `:Explore` / netrw for now
-* Recent files from the startup directory, based on `v:oldfiles`
+* Folder-specific dashboard pages with their own file and child-folder bookmarks
+* Directory bookmarks open another Bookmarker page rooted at that directory
+* Recent files from the active dashboard directory, based on `v:oldfiles`
 * Numbered recent-file shortcuts, from `1` through `9` and then `0`
 * `<CR>` to open the item under the cursor
 * One-key opening for quick bookmarks, directory bookmarks, and recent files
 * File searching with FZF
 * Text searching with ripgrep through `:Rg`
-* Searches rooted in the directory where Vim was started
+* Searches rooted in the active dashboard directory
 * Buffer-local mappings that do not replace your normal Vim mappings
 * Syntax highlighting for the Bookmarker dashboard
 * Optional file icons with `vim-devicons`
 * Optional vim-airline integration
 * `q` to return to another buffer or quit Vim when no useful buffer remains
 
-Bookmarker is still under development. Directory bookmarks currently open in netrw via `:Explore`; this is intentionally a first step, not the final directory-navigation design.
+Bookmarker is still under development. Directory bookmarks now navigate to nested Bookmarker pages; richer directory browsing can still be added later.
 
 ## Requirements
 
@@ -66,7 +74,6 @@ Bookmarker is written for Vim.
 Required:
 
 * Vim with `+eval`
-* netrw, for directory bookmarks opened with `:Explore` (normally bundled with Vim)
 
 For file searching:
 
@@ -129,11 +136,27 @@ Open Bookmarker with:
 :Bookmarker
 ```
 
+Open Bookmarker directly on a folder page with:
+
+```vim
+:Bookmarker ~/Documents
+```
+
 You can also create a mapping in your `.vimrc`:
 
 ```vim
 nnoremap <silent> <leader>bm :Bookmarker<CR>
 ```
+
+Bookmarker opens automatically when Vim starts without file arguments. To
+disable automatic startup and open it only with `:Bookmarker` or your mapping,
+add this to your `.vimrc`:
+
+```vim
+let g:bookmarker_disable_at_vimenter = 1
+```
+
+Set it to `0` to enable the automatic Bookmarker dashboard again.
 
 To display Bookmarker help:
 
@@ -233,7 +256,45 @@ let g:bookmarker_directory_bookmarks = [
 
 Open a directory bookmark by pressing its key, or by moving the cursor onto its line and pressing `<CR>`.
 
-For now, directory bookmarks open with Vim's `:Explore` command. Bookmarker loads netrw if `:Explore` is not already available, and falls back to editing the directory path if needed.
+Directory bookmarks open another Bookmarker page rooted at that directory. That folder page keeps the same dashboard layout, but its file bookmarks, child folder bookmarks, recent files, FZF, and ripgrep are all scoped to that folder.
+
+## Folder-specific pages
+
+Folder-specific pages are configured with `g:bookmarker_folder_bookmarks`. The dictionary key is the folder path. Each value can contain:
+
+* `bookmarks`: quick file bookmarks for that folder page
+* `directories`: child folder bookmarks for that folder page
+
+Paths inside a folder page can be absolute, `~`-based, or relative to that folder.
+
+Example:
+
+```vim
+let g:bookmarker_folder_bookmarks = {
+      \ '~/Documents/': {
+      \   'bookmarks': [
+      \     { 'n': 'notes/today.md' },
+      \     { 'r': 'resume.pdf' },
+      \   ],
+      \   'directories': [
+      \     { 'w': { 'label': 'Work', 'path': 'Work/' } },
+      \     { 'p': { 'label': 'Personal', 'path': 'Personal/' } },
+      \   ],
+      \ },
+      \ '~/Documents/Work/': {
+      \   'bookmarks': [
+      \     { 'm': 'meeting-notes.md' },
+      \   ],
+      \   'directories': [
+      \     { 'a': { 'label': 'Archive', 'path': 'Archive/' } },
+      \   ],
+      \ },
+      \ }
+```
+
+With this setup, opening the `D` directory bookmark for `~/Documents/` shows a Bookmarker page for Documents. Pressing `w` there opens another Bookmarker page for `~/Documents/Work/`, with the Work-specific bookmarks.
+
+If a folder is not listed in `g:bookmarker_folder_bookmarks`, it uses the global `g:bookmarker_quick_bookmarks` and `g:bookmarker_directory_bookmarks`.
 
 If the directory does not exist, Bookmarker shows a warning:
 
@@ -243,7 +304,7 @@ If the directory does not exist, Bookmarker shows a warning:
 
 ## Recent files
 
-Bookmarker shows recent files from Vim's `v:oldfiles`, filtered to the directory where Vim was started.
+Bookmarker shows recent files from Vim's `v:oldfiles`, filtered to the active dashboard directory.
 
 Recent files behavior:
 
@@ -259,7 +320,7 @@ Open a recent file by pressing its number, or by moving the cursor onto its line
 
 Press `f` inside Bookmarker to open FZF.
 
-The search starts from the directory where Vim was originally launched.
+The search starts from the active dashboard directory.
 
 For example:
 
@@ -268,13 +329,13 @@ cd ~/projects/my-project
 vim
 ```
 
-Bookmarker remembers:
+The first dashboard opens at:
 
 ```text
 ~/projects/my-project
 ```
 
-and FZF searches from that directory.
+If you then enter a child folder page, FZF searches from that child folder instead.
 
 Selecting a file opens it in Vim.
 
@@ -282,11 +343,11 @@ Selecting a file opens it in Vim.
 
 Press `/` inside Bookmarker to search the current project using ripgrep and FZF.
 
-The search is rooted in the directory where Vim was originally started. Bookmarker temporarily changes the local working directory for the dashboard window before running `:Rg`.
+The search is rooted in the active dashboard directory. Bookmarker temporarily changes the local working directory for the dashboard window before running `:Rg`.
 
-## Startup directory
+## Dashboard directory
 
-Bookmarker remembers the working directory from which Vim was started in `g:bookmarker_path_directory`.
+Bookmarker stores the active dashboard directory in `b:bookmarker_path_directory`.
 
 For example:
 
@@ -295,13 +356,31 @@ cd ~/projects/bookmarker
 vim
 ```
 
-The dashboard keeps:
+The first dashboard uses:
 
 ```text
-PWD: [~/projects/bookmarker]
+~/projects/bookmarker
 ```
 
-File finding, text searching, and recent-file filtering use this directory as the project context.
+and folder pages update `b:bookmarker_path_directory` to the folder you opened.
+
+File finding, text searching, and recent-file filtering use the active dashboard directory as the project context.
+
+## Syntax highlighting
+
+Bookmarker's syntax highlighting is intentionally close to vim-startify: the title and selected keys are highlighted like titles, sections like statements, rows like identifiers, numbers as numbers, paths as directories, and slashes/brackets as delimiters. You can customize the look by overriding the `Bookmarker*` highlight groups in your colorscheme or `.vimrc`.
+
+Useful groups:
+
+* `BookmarkerHeader`
+* `BookmarkerSection`
+* `BookmarkerFile`
+* `BookmarkerBracket`
+* `BookmarkerNumber`
+* `BookmarkerSelect`
+* `BookmarkerPath`
+* `BookmarkerSlash`
+* `BookmarkerFooter`
 
 ## Optional file icons
 
@@ -396,7 +475,7 @@ The different modules are responsible for separate parts of Bookmarker:
 
 Bookmarker is still under development. Possible next steps include:
 
-* Richer directory bookmark navigation beyond the current `:Explore` implementation
+* Richer directory browsing inside folder pages
 * Nested bookmark navigation
 * Reserved-key validation for file and directory bookmarks
 * Better handling for duplicate keys across quick bookmarks, directory bookmarks, and recent files
