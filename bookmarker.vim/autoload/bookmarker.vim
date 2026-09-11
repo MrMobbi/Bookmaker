@@ -108,6 +108,10 @@ function! bookmarker#start(...) abort
 	" Set up the mappings for the recent files
 	call bookmarker#recent#mappings()
 
+	" Let external file openers reuse this dashboard window instead of
+	" splitting around a protected nofile buffer.
+	call bookmarker#external_openers_setup()
+
 	" This mapping open the fzf finder
 	nnoremap <silent><buffer> f :call bookmarker#finder#file()<CR>
 
@@ -117,6 +121,9 @@ function! bookmarker#start(...) abort
 	" Open the item under the cursor.
 	nnoremap <silent><buffer> <CR> :call bookmarker#open_selected()<CR>
 
+	" Show Bookmarker help.
+	nnoremap <silent><buffer> ? :call bookmarker#help#open()<CR>
+
 	augroup bookmarker_cursor
 		autocmd!
 		autocmd CursorMoved <buffer> call bookmarker#cursor#lock()
@@ -125,6 +132,118 @@ function! bookmarker#start(...) abort
 	"this mapping only exists in the dashboard buffer
 	nnoremap <silent><buffer> q :call bookmarker#close()<CR>
 
+endfunction
+
+function! bookmarker#external_openers_setup() abort
+    augroup bookmarker_external_openers
+        autocmd! * <buffer>
+        autocmd CmdlineLeave <buffer> call bookmarker#external_openers_prepare(getcmdline())
+        autocmd WinLeave <buffer> let g:bookmarker_pending_external_window = win_getid()
+    augroup END
+
+    augroup bookmarker_external_targets
+        autocmd!
+        autocmd BufEnter * call bookmarker#external_openers_prepare_pending()
+    augroup END
+endfunction
+
+function! bookmarker#external_openers_prepare(command) abort
+    if &filetype !=# 'bookmarker'
+        return
+    endif
+
+    let l:command = substitute(a:command, '^\s*', '', '')
+
+    while l:command =~# '^\%(silent!\?\|vertical\|tab\|botright\|belowright\|rightbelow\|aboveleft\|leftabove\|topleft\|keepalt\|keepjumps\|noautocmd\)\s\+'
+        let l:command = substitute(l:command, '^\%(silent!\?\|vertical\|tab\|botright\|belowright\|rightbelow\|aboveleft\|leftabove\|topleft\|keepalt\|keepjumps\|noautocmd\)\s\+', '', '')
+    endwhile
+
+    if l:command =~# '^\%(edit\|e\|split\|sp\|vsplit\|vsp\|tabedit\|tabe\)\%($\|\s\|!\)'
+                \ || l:command =~# '^\%(Explore\|Sexplore\|Vexplore\|Texplore\|Startify\)\%($\|\s\|!\)'
+        call bookmarker#external_openers_empty_current_buffer()
+    endif
+endfunction
+
+function! bookmarker#external_openers_prepare_pending() abort
+    let l:window = get(g:, 'bookmarker_pending_external_window', 0)
+
+    if l:window <= 0 || win_id2win(l:window) == 0
+        unlet! g:bookmarker_pending_external_window
+        return
+    endif
+
+    " Entering NERDTree itself should not consume the Bookmarker window: keep
+    " the home page visible until a real file is chosen from the tree.
+    if &filetype ==# 'nerdtree' || bufname('%') =~# '^NERD_tree_'
+        let g:bookmarker_pending_external_seen_tree = 1
+        return
+    endif
+
+    if !get(g:, 'bookmarker_pending_external_seen_tree', 0)
+        return
+    endif
+
+    let l:path = expand('%:p')
+
+    if &buftype !=# '' || empty(l:path) || !filereadable(l:path)
+        return
+    endif
+
+    let l:source_window = win_getid()
+
+    call win_execute(l:window, 'call bookmarker#external_openers_empty_current_buffer()')
+    call win_execute(l:window, 'execute ''edit '' . fnameescape(' . string(l:path) . ')')
+    unlet! g:bookmarker_pending_external_window
+    unlet! g:bookmarker_pending_external_seen_tree
+
+    if l:source_window !=# l:window && win_id2win(l:source_window) > 0 && winnr('$') > 1
+        call win_gotoid(l:source_window)
+        silent! close
+    endif
+
+    call win_gotoid(l:window)
+endfunction
+
+function! bookmarker#external_openers_empty_current_buffer() abort
+    if &filetype !=# 'bookmarker'
+        return
+    endif
+
+    let l:current_buffer = bufnr('%')
+
+    silent! nunmap <buffer> f
+    silent! nunmap <buffer> /
+    silent! nunmap <buffer> <CR>
+    silent! nunmap <buffer> ?
+    silent! nunmap <buffer> q
+
+    for l:key in split('abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789', '\zs')
+        silent! execute 'nunmap <buffer> ' . l:key
+    endfor
+
+    augroup bookmarker_cursor
+        autocmd! * <buffer>
+    augroup END
+
+    augroup bookmarker_external_openers
+        autocmd! * <buffer>
+    augroup END
+
+    setlocal modifiable
+    silent! %delete _
+    silent! 0file
+    setlocal buftype=
+    setlocal filetype=
+    setlocal bufhidden=hide
+    setlocal swapfile
+    setlocal buflisted
+    setlocal nomodified
+
+    for l:buffer in range(1, bufnr('$'))
+        if l:buffer != l:current_buffer && bufname(l:buffer) ==# '[Bookmarker]'
+            silent! execute 'bwipeout ' . l:buffer
+        endif
+    endfor
 endfunction
 
 function! bookmarker#folder_config(directory) abort
@@ -186,6 +305,7 @@ function! bookmarker#dashboard(directory) abort
         silent! nunmap <buffer> f
         silent! nunmap <buffer> /
         silent! nunmap <buffer> <CR>
+        silent! nunmap <buffer> ?
         silent! nunmap <buffer> q
         for l:key in split('abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789', '\zs')
             silent! execute 'nunmap <buffer> ' . l:key
@@ -198,6 +318,7 @@ function! bookmarker#dashboard(directory) abort
         nnoremap <silent><buffer> f :call bookmarker#finder#file()<CR>
         nnoremap <silent><buffer> / :call bookmarker#finder#grep()<CR>
         nnoremap <silent><buffer> <CR> :call bookmarker#open_selected()<CR>
+        nnoremap <silent><buffer> ? :call bookmarker#help#open()<CR>
         nnoremap <silent><buffer> q :call bookmarker#close()<CR>
         return
     endif
@@ -206,34 +327,35 @@ function! bookmarker#dashboard(directory) abort
 endfunction
 
 function! bookmarker#close() abort
-    " Find all listed buffers.
+    " Find real/listed buffers. Vim's initial empty unnamed buffer can remain
+    " listed behind Bookmarker; do not treat that placeholder as a file to
+    " return to when Bookmarker is the only useful window.
     let l:listed_buffers = filter(
                 \ range(1, bufnr('$')),
                 \ 'buflisted(v:val)')
+    let l:real_buffers = filter(copy(l:listed_buffers),
+                \ '!empty(bufname(v:val))'
+                \ . ' || getbufvar(v:val, "&modified")'
+                \ . ' || getbufvar(v:val, "&buftype") !=# ""')
 
-    " There are real/listed buffers available.
-    if !empty(l:listed_buffers)
-
-        " Prefer Vim's alternate buffer.
-        let l:alternate_buffer = bufnr('#')
-
-        if l:alternate_buffer > 0
-                    \ && bufloaded(l:alternate_buffer)
-                    \ && buflisted(l:alternate_buffer)
-
-            execute 'buffer ' . l:alternate_buffer
-
-        else
-            bnext
-        endif
-
-        if exists(':AirlineRefresh')
-            silent! AirlineRefresh
-        endif
-
+    if empty(l:real_buffers)
+        quit
         return
     endif
-    quit
+
+    " Prefer Vim's alternate buffer when it is a real/listed buffer.
+    let l:alternate_buffer = bufnr('#')
+
+    if index(l:real_buffers, l:alternate_buffer) >= 0
+                \ && bufloaded(l:alternate_buffer)
+        execute 'buffer ' . l:alternate_buffer
+    else
+        execute 'buffer ' . l:real_buffers[0]
+    endif
+
+    if exists(':AirlineRefresh')
+        silent! AirlineRefresh
+    endif
 endfunction
 
 function! bookmarker#open_selected() abort
